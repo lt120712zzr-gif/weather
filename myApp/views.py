@@ -1,12 +1,17 @@
 from django.shortcuts import render,redirect
-from models import *
+from .models import *
 from utils import *
 from utils.getChartData import *
 # Create your views here.
 
 def index(request):
     uname = request.session.get('username')
-    userInfo =User.objects.get(username=uname)
+    if not uname:
+        return render(request, 'index.html')
+    try:
+        userInfo = User.objects.get(username=uname)
+    except User.DoesNotExist:
+        return render(request, 'index.html')
     dateList=getDateList()
     defaultDate=request.GET.get('date') or dateList[0]
     cites=getGlobalData()
@@ -22,7 +27,13 @@ def index(request):
 
 def cityChar(request):
     uname = request.session.get('username')
-    userInfo = User.objects.get(username=uname)
+    if not uname:
+        return render(request, 'cityChar.html')
+    try:
+        userInfo = User.objects.get(username=uname)
+    except User.DoesNotExist:
+        return render(request, 'cityChar.html')
+        return
     cites = getGlobalData()
     city = request.GET.get('city') or cites[0]
     print(city)
@@ -45,7 +56,13 @@ def cityChar(request):
 
 def tableData(request):
     uname = request.session.get('username')
-    userinfo = User.objects.get(username=uname)
+    if not uname:
+        return render(request, 'tableData.html')
+    try:
+        userinfo = User.objects.get(username=uname)
+    except User.DoesNotExist:
+        return render(request, 'tableData.html')
+        return
     cites = getGlobalData()
     city = request.GET.get("city") or cites[0]
     print(city)
