@@ -139,27 +139,15 @@
         <!-- Navigation Bar-->
         <header id="topnav">
             <div class="topbar-main">
-                <div class="container-fluid">
+                <div class="container-fluid" style="display: flex; justify-content: space-between; align-items: center;">
 
                     <!-- Logo-->
-                    <div>
-                        <div style="font-size: 28px">天气数据分析</div>
-                    </div>
+                    <div style="font-size: 28px">天气数据分析</div>
                     <!-- End Logo-->
 
-                    <div class="menu-extras topbar-custom navbar p-0">
+                    <div class="menu-extras topbar-custom navbar p-0" style="margin-left: auto;">
 
-                        <!-- Search input -->
-                        <div class="search-wrap" id="search-wrap">
-                            <div class="search-bar">
-                                <input class="search-input" type="search" placeholder="Search">
-                                <a href="#" class="close-search toggle-search" data-target="#search-wrap">
-                                    <i class="mdi mdi-close-circle"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <ul class="navbar-right ml-auto list-inline float-right mb-0">
+                        <ul class="navbar-right list-inline float-right mb-0">
 
                             <!-- full screen -->
                             <li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
@@ -261,33 +249,22 @@
     </div>
     <!-- header-bg -->
 
-    <div style="width: 100vw;height:80vh;display:flex;flex-direction: column;padding:20px;background-color: #fff;overflow-y:auto;">
-        <div class="custom-dropdown-wrapper" id="basicDropdown">
-            <div class="custom-dropdown-trigger">
-                <span class="selected-text">请选择汽车品牌</span>
-                <i class="mdi mdi-chevron-down dropdown-arrow"></i>
-            </div>
-            <div class="custom-dropdown-menu">
-                <div class="dropdown-item" data-value="volvo">
-                    <i class="mdi mdi-car mr-2"></i>Volvo
-                </div>
-                <div class="dropdown-item" data-value="saab">
-                    <i class="mdi mdi-car mr-2"></i>Saab
-                </div>
-                <div class="dropdown-item" data-value="mercedes">
-                    <i class="mdi mdi-car mr-2"></i>Mercedes
-                </div>
-                <div class="dropdown-item" data-value="audi">
-                    <i class="mdi mdi-car mr-2"></i>Audi
-                </div>
-                <div class="dropdown-item" data-value="bmw">
-                    <i class="mdi mdi-car mr-2"></i>BMW
-                </div>
-                <div class="dropdown-item" data-value="tesla">
-                    <i class="mdi mdi-car-electric mr-2"></i>Tesla
-                </div>
-            </div>
+    <div style="width: 100vw;height:85vh;display:flex;flex-direction: column;padding:20px;background-color: #fff;overflow-y:auto;">
+        <!-- 日期选择器 -->
+        <div style="margin-bottom: 20px;">
+            <label for="dateSelect" style="font-size: 16px; font-weight: 500; margin-right: 10px;">选择日期:</label>
+            {% if dateList %}
+            <select id="dateSelect" style="padding: 8px 12px; border: 2px solid #e3e6f0; border-radius: 8px; font-size: 14px; min-width: 200px;">
+                {% for date in dateList %}
+                <option value="{{ date }}" {% if date == defaultDate %}selected{% endif %}>{{ date }}</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <span style="color: #999; font-size: 14px;">暂无日期数据</span>
+            {% endif %}
         </div>
+        <!-- 地图图表 -->
+        <div id="chinaMap" style="width: 100%; height: 70vh; border: 1px solid #e3e6f0; border-radius: 8px;"></div>
     </div>
 
     <!-- Footer -->
@@ -316,53 +293,250 @@
     <!-- App js -->
     <script src="../static/js/app.js"></script>
 
-    <!-- 基础下拉列表组件JavaScript -->
-        <script>
-            $(document).ready(function() {
-                // 基础下拉列表
-                const basicDropdown = {
-                    wrapper: $('#basicDropdown'),
-                    trigger: $('#basicDropdown .custom-dropdown-trigger'),
-                    menu: $('#basicDropdown .custom-dropdown-menu'),
-                    items: $('#basicDropdown .dropdown-item'),
-                    selectedText: $('#basicDropdown .selected-text'),
-                    
-                    init: function() {
-                        this.trigger.on('click', () => this.toggle());
-                        this.items.on('click', (e) => this.selectItem(e));
-                        $(document).on('click', (e) => this.close(e));
-                    },
-                    
-                    toggle: function() {
-                        this.menu.toggleClass('show');
-                        this.trigger.toggleClass('active');
-                    },
-                    
-                    close: function(e) {
-                        if (!$(e.target).closest('#basicDropdown').length) {
-                            this.menu.removeClass('show');
-                            this.trigger.removeClass('active');
+    <!-- ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/extension/bmap.min.js"></script>
+    <script src="https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json" type="application/json" id="chinaGeoJson"></script>
+
+    <!-- 中国地图和日期选择器JavaScript -->
+
+    <!-- 中国地图和日期选择器JavaScript -->
+    <script>
+        $(document).ready(function() {
+            var mapData = {{ dataList|safe }};
+            var currentData = mapData;
+            var chart = null;
+
+            // 省份名称映射表：将数据库中的省份名称映射到地图GeoJSON中的标准名称
+            var provinceNameMap = {
+                '北京': '北京市',
+                '天津': '天津市',
+                '河北': '河北省',
+                '山西': '山西省',
+                '内蒙古自治区': '内蒙古自治区',
+                '辽宁': '辽宁省',
+                '吉林': '吉林省',
+                '黑龙江': '黑龙江省',
+                '上海': '上海市',
+                '江苏': '江苏省',
+                '浙江': '浙江省',
+                '安徽': '安徽省',
+                '福建': '福建省',
+                '江西': '江西省',
+                '山东': '山东省',
+                '河南': '河南省',
+                '湖北': '湖北省',
+                '湖南': '湖南省',
+                '广东': '广东省',
+                '广西': '广西壮族自治区',
+                '海南': '海南省',
+                '重庆': '重庆市',
+                '四川': '四川省',
+                '贵州': '贵州省',
+                '云南': '云南省',
+                '西藏': '西藏自治区',
+                '陕西': '陕西省',
+                '甘肃': '甘肃省',
+                '青海': '青海省',
+                '宁夏': '宁夏回族自治区',
+                '新疆': '新疆维吾尔自治区',
+                '台湾': '台湾省',
+                '香港': '香港特别行政区',
+                '澳门': '澳门特别行政区'
+            };
+
+            // 转换数据中的省份名称为标准名称
+            function normalizeProvinceName(data) {
+                for (var i = 0; i < data.length; i++) {
+                    var originalName = data[i].name;
+                    if (provinceNameMap[originalName]) {
+                        data[i].name = provinceNameMap[originalName];
+                    }
+                }
+                return data;
+            }
+
+            // 气温分级颜色
+            function getTempColor(temp) {
+                if (temp < 0) return '#3e6af2';  // 低温 - 蓝色
+                if (temp < 10) return '#7dc4f7'; // 寒冷 - 浅蓝
+                if (temp < 20) return '#f7dc6f'; // 中温 - 黄色
+                if (temp < 30) return '#f39c12'; // 温暖 - 橙色
+                return '#e74c3c';                // 高温 - 红色
+            }
+
+            // 初始化图表
+            function initChart(data) {
+                chart = echarts.init(document.getElementById('chinaMap'));
+                var option = {
+                    title: {
+                        text: '中国各省市气温分布',
+                        subtext: '单位: °C',
+                        left: 'center',
+                        top: 20,
+                        textStyle: {
+                            fontSize: 20,
+                            fontWeight: 'bold',
+                            color: '#333'
+                        },
+                        subtextStyle: {
+                            fontSize: 14,
+                            color: '#666'
                         }
                     },
-                    
-                    selectItem: function(e) {
-                        const item = $(e.currentTarget);
-                        this.items.removeClass('selected');
-                        item.addClass('selected');
-                        
-                        const text = item.contents().filter(function() {
-                            return this.nodeType === 3;
-                        }).text().trim() || item.text().trim();
-                        
-                        this.selectedText.text(text);
-                        this.toggle();
-                    }
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: function(params) {
+                            if (params.data && params.data.value !== undefined) {
+                                return params.name + '<br/>气温: ' + params.data.value + '°C';
+                            }
+                            return params.name + '<br/>暂无数据';
+                        },
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: '#4a73e8',
+                        borderWidth: 1,
+                        textStyle: {
+                            color: '#333',
+                            fontSize: 14
+                        }
+                    },
+                    visualMap: {
+                        min: -20,
+                        max: 40,
+                        left: 'left',
+                        bottom: '5%',
+                        text: ['高温', '低温'],
+                        calculable: true,
+                        inRange: {
+                            color: ['#3e6af2', '#7dc4f7', '#f7dc6f', '#f39c12', '#e74c3c']
+                        },
+                        textStyle: {
+                            color: '#666'
+                        }
+                    },
+                    series: [{
+                        name: '气温',
+                        type: 'map',
+                        roam: false,
+                        zoom: 1.5,
+                        center: [105, 35],
+                        map: 'china',
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                color: '#fff'
+                            },
+                            itemStyle: {
+                                areaColor: '#f4d03f',
+                                shadowBlur: 10,
+                                shadowColor: 'rgba(0,0,0,0.3)'
+                            }
+                        },
+                        itemStyle: {
+                            areaColor: '#e3e6f0',
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        label: {
+                            show: true,
+                            fontSize: 12,
+                            color: '#333'
+                        },
+                        data: data
+                    }]
                 };
+                chart.setOption(option);
 
-                // 初始化下拉列表
-                basicDropdown.init();
+                // 响应式调整
+                window.addEventListener('resize', function() {
+                    chart.resize();
+                });
+            }
+
+            // 根据数据设置地图各省份颜色
+            function updateMapColors() {
+                if (!currentData || currentData.length === 0) return;
+
+                // 为每个省份数据项添加颜色
+                for (var i = 0; i < currentData.length; i++) {
+                    if (currentData[i].value !== undefined) {
+                        currentData[i].itemStyle = {
+                            areaColor: getTempColor(currentData[i].value)
+                        };
+                    }
+                }
+            }
+
+            // 更新图表数据（不刷新页面）
+            function updateMapData(newData) {
+                currentData = normalizeProvinceName(newData);
+                updateMapColors();
+                if (chart) {
+                    chart.setOption({
+                        series: [{
+                            data: currentData
+                        }]
+                    });
+                }
+            }
+
+            // 通过 AJAX 获取指定日期的地图数据
+            function fetchMapData(date) {
+                $.ajax({
+                    url: '/api/map-data/',
+                    type: 'GET',
+                    data: { date: date },
+                    success: function(response) {
+                        updateMapData(response.data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('获取地图数据失败:', error);
+                        console.error('状态码:', xhr.status);
+                    }
+                });
+            }
+
+            // 日期选择变化时通过 AJAX 加载数据（不刷新页面）
+            $('#dateSelect').on('change', function() {
+                var selectedDate = $(this).val();
+                // 更新浏览器 URL，但不刷新页面
+                var newUrl = window.location.pathname + '?date=' + selectedDate;
+                window.history.pushState({ path: newUrl }, '', newUrl);
+                // 通过 AJAX 获取新数据
+                fetchMapData(selectedDate);
             });
-        </script>
+
+            // 使用 fetch API 加载地图数据
+            fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+                .then(response => response.json())
+                .then(geoJson => {
+                    echarts.registerMap('china', geoJson);
+                    console.log('原始数据:', mapData);
+                    console.log('标准化后数据:', normalizeProvinceName([...currentData]));
+                    currentData = normalizeProvinceName(currentData);
+                    updateMapColors();
+                    initChart(currentData);
+                })
+                .catch(error => {
+                    console.error('加载地图数据失败:', error);
+                    // 尝试使用备用数据源
+                    fetch('https://raw.githubusercontent.com/apache/echarts-examples/gh-pages/public/data/asset/geo/china.json')
+                        .then(response => response.json())
+                        .then(geoJson => {
+                            echarts.registerMap('china', geoJson);
+                            console.log('原始数据:', mapData);
+                            console.log('标准化后数据:', normalizeProvinceName([...currentData]));
+                            currentData = normalizeProvinceName(currentData);
+                            updateMapColors();
+                            initChart(currentData);
+                        })
+                        .catch(err => {
+                            console.error('备用地图数据也加载失败:', err);
+                        });
+                });
+        });
+    </script>
 
 </body>
 

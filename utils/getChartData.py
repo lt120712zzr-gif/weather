@@ -4,7 +4,10 @@ from myApp.models import WeatherInfo, User, Part2, Part1, Part3, Part4, Part5
 
 
 def getMapData(date):
-   weatherList = WeatherInfo.objects.all()
+   dataList = []
+
+   # 构建城市到省份的映射（支持带"市"和不带"市"的城市名称）
+   cityToProvince = {}
    cityList = [
         {'province': '北京', 'city': ['北京市']},
         {'province': '天津', 'city': ['天津市']},
@@ -99,17 +102,41 @@ def getMapData(date):
        {'province': '澳门', 'city': ['澳门', '离岛']},
    ]
 
-   dataList = []
-   date = date
-   for i in weatherList:
-       if date == i.date:
-           for j in cityList:
-               if j['city'][0].find(i.city) != -1:
+   # 构建映射：同时支持带"市"和不带"市"的城市名称
+   for provinceInfo in cityList:
+        province = provinceInfo['province']
+        for city in provinceInfo['city']:
+            # 原始名称（带"市"）
+            cityToProvince[city] = province
+            # 去掉"市"字
+            if city.endswith('市'):
+                cityWithoutSuffix = city[:-1]
+                cityToProvince[cityWithoutSuffix] = province
+
+   # 先筛选指定日期的数据
+   weatherListByDate = WeatherInfo.objects.filter(date=date)
+   
+   # 遍历筛选后的天气数据
+   for weather in weatherListByDate:
+       province = cityToProvince.get(weather.city)
+       if province:
+           # 检查是否已经添加过该省份的数据
+           provinceExists = False
+           for item in dataList:
+               if item['name'] == province:
+                   provinceExists = True
+                   break
+           # 如果该省份还没有数据，则添加
+           if not provinceExists:
+               try:
                    dataList.append({
-                       'name': j['province'].replace(' 省', '').replace('维吾尔自治区','').
-                       replace('自治区','').replace('回族','').replace('壮族',''),
-                       'value': int(i.mastHeightDay)
+                       'name': province,
+                       'value': int(weather.mastHeightDay)
                    })
+               except (ValueError, TypeError):
+                   # 如果无法转换为整数，跳过该条记录
+                   continue
+
    return dataList
 
 def get_timestamp(date):

@@ -19,6 +19,7 @@ from django.urls import path, include
 from myApp import views
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/map-data/', views.map_data_api, name='map_data_api'),
     path('',views.index, name='index'),
     path('myApp',include('myApp.urls')),
 ]
