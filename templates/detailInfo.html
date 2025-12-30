@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>{{ defaultCity }} - 详细信息</title>
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/style.css" rel="stylesheet" type="text/css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .header-bg {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .content-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-item label {
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+        }
+        .control-item select,
+        .control-item input {
+            padding: 8px 12px;
+            border: 1px solid #e3e6f0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .control-item select:focus,
+        .control-item input:focus {
+            border-color: #4a73e8;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        table tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+        table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        table th.sortable:hover {
+            background-color: #e7f1ff;
+        }
+        table th.sortable::after {
+            content: '↕';
+            margin-left: 5px;
+            color: #999;
+        }
+        table th.sortable.asc::after {
+            content: '↑';
+            color: #4a73e8;
+        }
+        table th.sortable.desc::after {
+            content: '↓';
+            color: #4a73e8;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e3e6f0;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #4a73e8;
+            color: #fff;
+            border-color: #4a73e8;
+        }
+        .pagination button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .pagination button.active {
+            background: #4a73e8;
+            color: #fff;
+            border-color: #4a73e8;
+        }
+        .info-box {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .total-info {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bg">
+        <!-- Navigation Bar-->
+        <header id="topnav">
+            <div class="topbar-main">
+                <div class="container-fluid" style="display: flex; justify-content: space-between; align-items: center;">
+
+                    <!-- Logo-->
+                    <div style="font-size: 28px">天气数据分析</div>
+                    <!-- End Logo-->
+
+                    <div class="menu-extras topbar-custom navbar p-0" style="margin-left: auto;">
+
+                        <ul class="navbar-right list-inline float-right mb-0">
+
+                            <!-- full screen -->
+                            <li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+                                <a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+                                    <i class="fas fa-expand noti-icon"></i>
+                                </a>
+                            </li>
+
+                            <li class="dropdown notification-list list-inline-item" style="margin-left: 30px;">
+                                <div class="dropdown notification-list nav-pro-img">
+                                    <a class="dropdown-toggle nav-link arrow-none waves-effect nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                        <img src="../static/picture/user-1.jpg" alt="user" class="rounded-circle">
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-animated profile-dropdown">
+                                        <!-- item-->
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-account-circle"></i> Profile</a>
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-wallet"></i> My Wallet</a>
+                                        <a class="dropdown-item d-block" href="#"><span class="badge badge-success float-right">11</span><i class="mdi mdi-settings"></i> Settings</a>
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#"><i class="mdi mdi-power text-danger"></i> Logout</a>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="menu-item dropdown notification-list list-inline-item">
+                                <!-- Mobile menu toggle-->
+                                <a class="navbar-toggle nav-link">
+                                    <div class="lines">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </a>
+                                <!-- End mobile menu toggle-->
+                            </li>
+
+                        </ul>
+
+                    </div>
+                    <!-- end menu-extras -->
+
+                    <div class="clearfix"></div>
+
+                </div>
+                <!-- end container -->
+            </div>
+            <!-- end topbar-main -->
+
+            <!-- MENU Start -->
+            <div class="navbar-custom">
+                <div class="container-fluid">
+
+                    <div id="navigation">
+
+                        <!-- Navigation Menu-->
+                        <ul class="navigation-menu">
+
+                            <li class="has-submenu">
+                                <a href="/"><i class="dripicons-meter"></i> 首页</a>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="#"><i class="dripicons-briefcase"></i> 个人信息</a>
+
+                            </li>
+
+                            <li class="has-submenu" style="position: relative;">
+                                <a href="#" class="city-menu-trigger"><i class="dripicons-broadcast"></i> 城市</a>
+                                <div class="city-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e6f0; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); z-index: 1000; min-width: 200px; max-height: 400px; overflow-y: auto; padding: 10px;">
+                                    {% if cites %}
+                                    <div style="font-weight: 500; color: #333; padding: 8px 12px; border-bottom: 1px solid #e3e6f0; margin-bottom: 5px;">选择城市</div>
+                                    {% for city in cites %}
+                                    <a href="/detailInfo?city={{ city }}" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        {{ city }}
+                                    </a>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div style="padding: 10px 12px; color: #999;">暂无城市数据</div>
+                                    {% endif %}
+                                </div>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/detailInfo" class="active"><i class="dripicons-view-thumb"></i> 详情信息</a>
+
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/dataVisualization"><i class="dripicons-graph-bar"></i>数据可视化 </a>
+
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/wordCloud"><i class="dripicons-to-do"></i> 数据词云图</a>
+
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/weatherForecast"><i class="dripicons-weather"></i> 天气预测</a>
+
+                            </li>
+
+                        </ul>
+                        <!-- End navigation menu -->
+                    </div>
+                    <!-- end #navigation -->
+                </div>
+                <!-- end container -->
+            </div>
+            <!-- end navbar-custom -->
+        </header>
+        <!-- End Navigation Bar-->
+
+    </div>
+    <!-- header-bg -->
+
+    <div style="padding: 20px; background-color: #f8f9fa; padding-bottom: 80px;">
+        <div class="content-container">
+            <div class="page-title">{{ defaultCity }} - 天气详细信息</div>
+
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <div class="control-item">
+                    <label>选择城市:</label>
+                    <select id="citySelect">
+                        {% if cites %}
+                        {% for city in cites %}
+                        <option value="{{ city }}" {% if city == defaultCity %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>每页显示:</label>
+                    <select id="pageSize">
+                        <option value="10" {% if pageSize == 10 %}selected{% endif %}>10条</option>
+                        <option value="20" {% if pageSize == 20 %}selected{% endif %}>20条</option>
+                        <option value="50" {% if pageSize == 50 %}selected{% endif %}>50条</option>
+                        <option value="100" {% if pageSize == 100 %}selected{% endif %}>100条</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>月份:</label>
+                    <select id="monthSelect">
+                        <option value="">全部</option>
+                        {% if monthList %}
+                        {% for month in monthList %}
+                        <option value="{{ month }}" {% if month == monthQuery %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>日期:</label>
+                    <input type="text" id="dateInput" placeholder="输入日期，如：15" value="{{ dateQuery|default:'' }}">
+                </div>
+                <div class="control-item">
+                    <button id="searchBtn" style="padding: 8px 20px; background: #4a73e8; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">搜索</button>
+                </div>
+            </div>
+
+            <div class="total-info">
+                共 <span id="totalCount">{{ totalCount }}</span> 条数据
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-field="date">日期</th>
+                            <th class="sortable" data-field="weekDay">星期</th>
+                            <th class="sortable" data-field="city">城市</th>
+                            <th class="sortable" data-field="wearther">天气</th>
+                            <th class="sortable" data-field="mastHeightDay">日高温(°C)</th>
+                            <th class="sortable" data-field="mastSmallDay">日低温(°C)</th>
+                            <th class="sortable" data-field="wind">风向</th>
+                            <th class="sortable" data-field="windOrder">风力</th>
+                            <th class="sortable" data-field="averageHeight">月平均高温(°C)</th>
+                            <th class="sortable" data-field="averageSmall">月平均低温(°C)</th>
+                            <th class="sortable" data-field="mastHeight">月最低高温(°C)</th>
+                            <th class="sortable" data-field="mastSmall">月最高低温(°C)</th>
+                            <th class="sortable" data-field="averageAir">平均空气质量</th>
+                            <th class="sortable" data-field="mastAir">最高空气质量</th>
+                            <th class="sortable" data-field="lostAir">最低空气质量</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% if tableData %}
+                        {% for item in tableData %}
+                        <tr>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.weekDay }}</td>
+                            <td>{{ item.city }}</td>
+                            <td>{{ item.wearther|default:'-' }}</td>
+                            <td>{{ item.mastHeightDay|default:'-' }}</td>
+                            <td>{{ item.mastSmallDay|default:'-' }}</td>
+                            <td>{{ item.wind|default:'-' }}</td>
+                            <td>{{ item.windOrder|default:'-' }}</td>
+                            <td>{{ item.averageHeight|default:'-' }}</td>
+                            <td>{{ item.averageSmall|default:'-' }}</td>
+                            <td>{{ item.mastHeight|default:'-' }}</td>
+                            <td>{{ item.mastSmall|default:'-' }}</td>
+                            <td>{{ item.averageAir|default:'-' }}</td>
+                            <td>{{ item.mastAir|default:'-' }}</td>
+                            <td>{{ item.lostAir|default:'-' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="15" class="info-box">暂无数据</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination" id="pagination">
+                <!-- 分页按钮将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" style="position: fixed; bottom: 0; left: 0; right: 0; background: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #e3e6f0;">
+        Copyright &copy; 2022.Company name All rights reserved.
+    </footer>
+
+    <!-- jQuery  -->
+    <script src="../static/js/jquery.min.js"></script>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/waves.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // 城市菜单悬停交互
+            $('.has-submenu:has(.city-menu-trigger)').hover(
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+
+            // 当前状态
+            var currentPage = {{ currentPage }};
+            var pageSize = {{ pageSize }};
+            var currentCity = '{{ defaultCity }}';
+            var sortField = '{{ sortField|default:"date" }}';
+            var sortOrder = '{{ sortOrder|default:"desc" }}';
+            var searchQuery = '{{ searchQuery|default:"" }}';
+            var monthQuery = '{{ monthQuery|default:"" }}';
+            var dateQuery = '{{ dateQuery|default:"" }}';
+            var totalCount = {{ totalCount }};
+            var totalPages = Math.ceil(totalCount / pageSize);
+
+            // 城市选择变化
+            $('#citySelect').on('change', function() {
+                var city = $(this).val();
+                updateURL({
+                    city: city,
+                    page: 1,
+                    keepSort: false,
+                    keepSearch: false
+                });
+            });
+
+            // 每页条数变化
+            $('#pageSize').on('change', function() {
+                pageSize = parseInt($(this).val());
+                updateURL({
+                    pageSize: pageSize,
+                    page: 1
+                });
+            });
+
+            // 搜索按钮点击
+            $('#searchBtn').on('click', function() {
+                var search = $('#searchInput').val();
+                var month = $('#monthSelect').val();
+                var date = $('#dateInput').val();
+                updateURL({
+                    search: search,
+                    month: month,
+                    date: date,
+                    page: 1,
+                    keepSort: false
+                });
+            });
+
+            // 排序
+            $('.sortable').on('click', function() {
+                var field = $(this).data('field');
+                if (sortField === field) {
+                    sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortField = field;
+                    sortOrder = 'desc';
+                }
+
+                // 更新排序图标
+                $('.sortable').removeClass('asc desc');
+                $(this).addClass(sortOrder);
+
+                updateURL({
+                    sortField: sortField,
+                    sortOrder: sortOrder,
+                    page: 1
+                });
+            });
+
+            // 设置当前排序状态
+            $('.sortable').each(function() {
+                if ($(this).data('field') === sortField) {
+                    $(this).addClass(sortOrder);
+                }
+            });
+
+            // 更新URL并跳转
+            function updateURL(params) {
+                var urlParams = new URLSearchParams(window.location.search);
+
+                // 设置城市
+                if (params.city) {
+                    urlParams.set('city', params.city);
+                } else {
+                    urlParams.set('city', currentCity);
+                }
+
+                urlParams.set('page', params.page || 1);
+                urlParams.set('pageSize', params.pageSize || pageSize);
+
+                // 如果不清除排序，则保留当前排序
+                if (params.keepSort !== false) {
+                    if (sortField) urlParams.set('sortField', sortField);
+                    if (sortOrder) urlParams.set('sortOrder', sortOrder);
+                } else {
+                    urlParams.delete('sortField');
+                    urlParams.delete('sortOrder');
+                }
+
+                // 如果不清除搜索，则保留当前搜索
+                if (params.keepSearch !== false) {
+                    if (searchQuery || params.search !== undefined) {
+                        urlParams.set('search', params.search || searchQuery);
+                    }
+                } else {
+                    urlParams.delete('search');
+                }
+
+                // 月份参数
+                if (params.month !== undefined) {
+                    if (params.month) {
+                        urlParams.set('month', params.month);
+                    } else {
+                        urlParams.delete('month');
+                    }
+                }
+
+                // 日期参数
+                if (params.date !== undefined) {
+                    if (params.date) {
+                        urlParams.set('date', params.date);
+                    } else {
+                        urlParams.delete('date');
+                    }
+                }
+
+                window.location.href = '/detailInfo?' + urlParams.toString();
+            }
+
+            // 渲染分页
+            function renderPagination() {
+                var pagination = $('#pagination');
+                pagination.empty();
+
+                if (totalPages <= 1) return;
+
+                // 上一页
+                var prevBtn = $('<button>').text('上一页').prop('disabled', currentPage === 1);
+                prevBtn.on('click', function() {
+                    if (currentPage > 1) {
+                        updateURL({ page: currentPage - 1 });
+                    }
+                });
+                pagination.append(prevBtn);
+
+                // 页码按钮
+                var startPage = Math.max(1, currentPage - 2);
+                var endPage = Math.min(totalPages, currentPage + 2);
+
+                if (startPage > 1) {
+                    pagination.append($('<button>').text('1').data('page', 1).on('click', function() {
+                        updateURL({ page: 1 });
+                    }));
+                    if (startPage > 2) {
+                        pagination.append($('<button>').text('...').prop('disabled', true));
+                    }
+                }
+
+                for (var i = startPage; i <= endPage; i++) {
+                    var btn = $('<button>').text(i);
+                    if (i === currentPage) {
+                        btn.addClass('active');
+                    }
+                    btn.on('click', function() {
+                        updateURL({ page: $(this).data('page') || $(this).text() });
+                    });
+                    pagination.append(btn);
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pagination.append($('<button>').text('...').prop('disabled', true));
+                    }
+                    pagination.append($('<button>').text(totalPages).data('page', totalPages).on('click', function() {
+                        updateURL({ page: totalPages });
+                    }));
+                }
+
+                // 下一页
+                var nextBtn = $('<button>').text('下一页').prop('disabled', currentPage === totalPages);
+                nextBtn.on('click', function() {
+                    if (currentPage < totalPages) {
+                        updateURL({ page: currentPage + 1 });
+                    }
+                });
+                pagination.append(nextBtn);
+            }
+
+            renderPagination();
+        });
+    </script>
+</body>
+</html>

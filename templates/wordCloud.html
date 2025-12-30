@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>天气词云图</title>
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/style.css" rel="stylesheet" type="text/css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .header-bg {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .content-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .control-item label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+        }
+        .control-item select {
+            padding: 12px 20px;
+            border: 2px solid #e3e6f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            outline: none;
+            background: #fff;
+            max-width: 200px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .control-item select:hover {
+            border-color: #4a73e8;
+            box-shadow: 0 4px 12px rgba(74,115,232,0.2);
+        }
+        .control-item select:focus {
+            border-color: #4a73e8;
+            box-shadow: 0 0 0 3px rgba(74,115,232,0.15);
+        }
+        .control-item select option {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .chart-section {
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            height: 70vh;
+            width: 100%;
+            min-height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bg">
+        <!-- Navigation Bar-->
+        <header id="topnav">
+            <div class="topbar-main">
+                <div class="container-fluid" style="display: flex; justify-content: space-between; align-items: center;">
+
+                    <!-- Logo-->
+                    <div style="font-size: 28px">天气数据分析</div>
+                    <!-- End Logo-->
+
+                    <div class="menu-extras topbar-custom navbar p-0" style="margin-left: auto;">
+
+                        <ul class="navbar-right list-inline float-right mb-0">
+
+                            <!-- full screen -->
+                            <li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+                                <a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+                                    <i class="fas fa-expand noti-icon"></i>
+                                </a>
+                            </li>
+
+                            <li class="dropdown notification-list list-inline-item" style="margin-left: 30px;">
+                                <div class="dropdown notification-list nav-pro-img">
+                                    <a class="dropdown-toggle nav-link arrow-none waves-effect nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                        <img src="../static/picture/user-1.jpg" alt="user" class="rounded-circle">
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-animated profile-dropdown">
+                                        <!-- item-->
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-account-circle"></i> Profile</a>
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-wallet"></i> My Wallet</a>
+                                        <a class="dropdown-item d-block" href="#"><span class="badge badge-success float-right">11</span><i class="mdi mdi-settings"></i> Settings</a>
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#"><i class="mdi mdi-power text-danger"></i> Logout</a>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="menu-item dropdown notification-list list-inline-item">
+                                <!-- Mobile menu toggle-->
+                                <a class="navbar-toggle nav-link">
+                                    <div class="lines">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </a>
+                                <!-- End mobile menu toggle-->
+                            </li>
+
+                        </ul>
+
+                    </div>
+                    <!-- end menu-extras -->
+
+                    <div class="clearfix"></div>
+
+                </div>
+                <!-- end container -->
+            </div>
+            <!-- end topbar-main -->
+
+            <!-- MENU Start -->
+            <div class="navbar-custom">
+                <div class="container-fluid">
+
+                    <div id="navigation">
+
+                        <!-- Navigation Menu-->
+                        <ul class="navigation-menu">
+
+                            <li class="has-submenu">
+                                <a href="/"><i class="dripicons-meter"></i> 首页</a>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="#"><i class="dripicons-briefcase"></i> 个人信息</a>
+
+                            </li>
+
+                            <li class="has-submenu" style="position: relative;">
+                                <a href="#" class="city-menu-trigger"><i class="dripicons-broadcast"></i> 城市</a>
+                                <div class="city-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e6f0; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); z-index: 1000; min-width: 200px; max-height: 400px; overflow-y: auto; padding: 10px;">
+                                    {% if cites %}
+                                    <div style="font-weight: 500; color: #333; padding: 8px 12px; border-bottom: 1px solid #e3e6f0; margin-bottom: 5px;">选择城市</div>
+                                    {% for city in cites %}
+                                    <a href="/wordCloud?city={{ city }}" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        {{ city }}
+                                    </a>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div style="padding: 10px 12px; color: #999;">暂无城市数据</div>
+                                    {% endif %}
+                                </div>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/detailInfo"><i class="dripicons-view-thumb"></i> 详情信息</a>
+
+                            </li>
+
+                            <li class="has-submenu" style="position: relative;">
+                                <a href="#" class="viz-menu-trigger"><i class="dripicons-graph-bar"></i>数据可视化 </a>
+                                <div class="viz-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e6f0; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); z-index: 1000; min-width: 200px; padding: 10px;">
+                                    <div style="font-weight: 500; color: #333; padding: 8px 12px; border-bottom: 1px solid #e3e6f0; margin-bottom: 5px;">选择统计类型</div>
+                                    <a href="/dataVisualization?type=temp" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        <i class="dripicons-thermometer"></i> 月份气温统计
+                                    </a>
+                                    <a href="/dataVisualization?type=air" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        <i class="dripicons-wind"></i> 月份空气统计
+                                    </a>
+                                </div>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/wordCloud" class="active"><i class="dripicons-to-do"></i> 数据词云图</a>
+
+                            </li>
+
+                        </ul>
+                        <!-- End navigation menu -->
+                    </div>
+                    <!-- end #navigation -->
+                </div>
+                <!-- end container -->
+            </div>
+            <!-- end navbar-custom -->
+        </header>
+        <!-- End Navigation Bar-->
+
+    </div>
+    <!-- header-bg -->
+
+    <div style="padding: 20px; background-color: #f8f9fa; padding-bottom: 80px;">
+        <div class="content-container">
+            <div class="page-title">天气词云图 - {{ defaultCity }}</div>
+
+            <!-- 城市选择器 -->
+            <div class="control-panel">
+                <div class="control-item">
+                    <label>选择城市:</label>
+                    <select id="citySelect">
+                        {% if cites %}
+                        {% for city in cites %}
+                        <option value="{{ city }}" {% if city == defaultCity %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- 词云图 -->
+            <div class="chart-section">
+                <div id="wordCloudChart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" style="position: fixed; bottom: 0; left: 0; right: 0; background: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #e3e6f0;">
+        Copyright &copy; 2022.Company name All rights reserved.
+    </footer>
+
+    <!-- ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts-wordcloud/2.1.0/echarts-wordcloud.min.js"></script>
+
+    <!-- jQuery  -->
+    <script src="../static/js/jquery.min.js"></script>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/waves.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // 城市菜单悬停交互
+            $('.has-submenu:has(.city-menu-trigger)').hover(
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+
+            // 数据可视化菜单悬停交互
+            $('.has-submenu:has(.viz-menu-trigger)').hover(
+                function() {
+                    $(this).find('.viz-dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.viz-dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+
+            // 城市选择变化
+            $('#citySelect').on('change', function() {
+                var city = $(this).val();
+                window.location.href = '/wordCloud?city=' + city;
+            });
+
+            console.log('词云数据:', {{ wordCloudData|safe }});
+
+            // 初始化词云图
+            var wordCloudChart = echarts.init(document.getElementById('wordCloudChart'));
+            var wordCloudOption = {
+                tooltip: {
+                    show: true,
+                    formatter: '{b}: {c}'
+                },
+                series: [
+                    {
+                        type: 'wordCloud',
+                        gridSize: 20,
+                        sizeRange: [12, 60],
+                        rotationRange: [0, 0],
+                        rotationStep: 45,
+                        shape: 'heart',
+                        width: '100%',
+                        height: '100%',
+                        drawOutOfBound: false,
+                        left: 'center',
+                        top: 'center',
+                        textStyle: {
+                            fontFamily: 'Microsoft YaHei',
+                            fontWeight: 'bold',
+                            color: function () {
+                                var colors = ['#4a73e8', '#3498db', '#e74c3c', '#f39c12', '#9b59b6', '#2ecc71', '#1abc9c', '#e67e22', '#16a085', '#34495e'];
+                                return colors[Math.round(Math.random() * colors.length)];
+                            }
+                        },
+                        emphasis: {
+                            shadowBlur: 10,
+                            shadowColor: '#333'
+                        },
+                        data: {{ wordCloudData|safe }}
+                    }
+                ]
+            };
+
+            try {
+                wordCloudChart.setOption(wordCloudOption);
+            } catch (e) {
+                console.error('词云图初始化失败:', e);
+                // 如果词云组件不可用，使用柱状图代替
+                var barChart = echarts.init(document.getElementById('wordCloudChart'));
+                var barOption = {
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: {{ wordCloudData|safe }}.map(function(item) { return item.name; })
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: {{ wordCloudData|safe }}.map(function(item) { return item.value; }),
+                        itemStyle: {
+                            color: '#4a73e8'
+                        }
+                    }]
+                };
+                barChart.setOption(barOption);
+            }
+
+            // 响应式调整
+            window.addEventListener('resize', function() {
+                wordCloudChart.resize();
+            });
+        });
+    </script>
+</body>
+</html>

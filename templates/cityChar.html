@@ -1,135 +1,479 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-
-</head>
-
-
-<body>
-
-
-
-
-
-
-
-
-
-
-<script >
-    import echarts from "../static/js/dropzone";
-
-    var myChart = echarts.init(document.getElementById('mainOne'))
-    var option={
-        backgroundColor:'rgb(252,173,54,0.1)',
-        legend:{},
-        tooltip: {
-            backgroundColor: "cornflowerblue"
-        },
-        toolbox:{
-            right:25,
-            top:10,
-            show:true,
-            feature: {
-                mark: {show: true},
-                dataView: {show: true, readOnly: false},
-                magicType: {show: true, type: ['line', 'bar', 'stack', 'tiled']},
-                restore: {show: true},
-                saveAsImage: {show: true}
-            }
-        },
-        visualMap: {
-            right:2,
-            bottom: 1,
-            pieces:[{
-                gt:-45,lt:-35,color:"#0c0b47"
-            },{
-                gt:-35,lt:-25,color:"#231dd5"
-            },{
-                gt:-25,lt:-15,color:"#3bb1e2"
-            },{
-                gt:-15,lt:-5,color:"#57f2ff"
-            },{
-                gt:-5,lt:5,color:"#68ffc6"
-            },{
-                gt:5,lt:10,color:"#00ff45"
-            },{
-                gt:10,lt:20,color:"#ff9933"
-            },{
-                gt:20,lt:30,color:"#cc8080"
-            },{
-                gt:20,lt:30,color:"orange"
-            },{
-                gt:30,lt:40,color:"red"
-            }]
-        },
-        grid: {x:50,y:50,x2:100,y2:50},
-        xAxis: [{
-            data:{{ data| safe }}
-        }],
-        yAxis:{},
-        dataZoom:{
-            show:true,
-            realtime:true,
-            start:70,
-            end:90,
-            bottom:'0%'
-        },
-        series:[
-              {
-                name:`${defaultCity} - 最高气温`,
-                type:'line',
-                color:'red',
-                markLine:{data:[{type:'average',name:'平均值'}]},
-                markPoint:{data:[{type:'max',name:'最大值'},{type:'min',name:'最小值'}]},
-                data:{{ maxTemp| safe }}
-              },
-              {
-                name:'{{ defaultCity }} - 最低气温',
-                type:'line',
-                color:'blue',
-                markLine:{data:[{type:'average',name:'平均值'}]},
-                markPoint:{data:[{type:'max',name:'最大值'},{type:'min',name:'最小值'}]},
-                data:{{ minTemp | safe }}
-              }
-            ]
-          };
-        myChart.setOption(option);
-</script>
-<script >
-    var chartDom = document.getElementById('mainA')
-    var mychart =echarts.init(chartDom)
-    var option;
-    option = {
-  title: {
-    {#text: 'Referer of a Website',#}
-    {#subtext: 'Fake Data',#}
-    {#left: 'center'#}
-  },
-  tooltip: {
-    trigger: 'item'
-  },
-  legend: {
-    orient: 'vertical',
-    {#left: 'left'#}
-      x:'-5px',
-      y:'70%'
-  },
-  series: [
-    {
-      name: 'Access From',
-      type: 'pie',
-      radius: '50%',
-      data: {{ resultWeather|safe }},
-      emphasis: {
-        itemStyle: {
-          shadowBlur: 10,
-          shadowOffsetX: 0,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>{{ defaultCity }} - 城市天气分析</title>
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/style.css" rel="stylesheet" type="text/css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
         }
-      }
-    }
-  ]
-};
-</script>
+        .header-bg {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .chart-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .main-chart {
+            height: 50vh;
+        }
+        .pie-chart {
+            height: 40vh;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bg">
+        <!-- Navigation Bar-->
+        <header id="topnav">
+            <div class="topbar-main">
+                <div class="container-fluid" style="display: flex; justify-content: space-between; align-items: center;">
+
+                    <!-- Logo-->
+                    <div style="font-size: 28px">天气数据分析</div>
+                    <!-- End Logo-->
+
+                    <div class="menu-extras topbar-custom navbar p-0" style="margin-left: auto;">
+
+                        <ul class="navbar-right list-inline float-right mb-0">
+
+                            <!-- full screen -->
+                            <li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+                                <a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+                                    <i class="fas fa-expand noti-icon"></i>
+                                </a>
+                            </li>
+
+                            <li class="dropdown notification-list list-inline-item" style="margin-left: 30px;">
+                                <div class="dropdown notification-list nav-pro-img">
+                                    <a class="dropdown-toggle nav-link arrow-none waves-effect nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                        <img src="../static/picture/user-1.jpg" alt="user" class="rounded-circle">
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-animated profile-dropdown">
+                                        <!-- item-->
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-account-circle"></i> Profile</a>
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-wallet"></i> My Wallet</a>
+                                        <a class="dropdown-item d-block" href="#"><span class="badge badge-success float-right">11</span><i class="mdi mdi-settings"></i> Settings</a>
+                                        <a class="dropdown-item" href="#"><i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#"><i class="mdi mdi-power text-danger"></i> Logout</a>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="menu-item dropdown notification-list list-inline-item">
+                                <!-- Mobile menu toggle-->
+                                <a class="navbar-toggle nav-link">
+                                    <div class="lines">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </a>
+                                <!-- End mobile menu toggle-->
+                            </li>
+
+                        </ul>
+
+                    </div>
+                    <!-- end menu-extras -->
+
+                    <div class="clearfix"></div>
+
+                </div>
+                <!-- end container -->
+            </div>
+            <!-- end topbar-main -->
+
+            <!-- MENU Start -->
+            <div class="navbar-custom">
+                <div class="container-fluid">
+
+                    <div id="navigation">
+
+                        <!-- Navigation Menu-->
+                        <ul class="navigation-menu">
+
+                            <li class="has-submenu">
+                                <a href="/"><i class="dripicons-meter"></i> 首页</a>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="#"><i class="dripicons-briefcase"></i> 个人信息</a>
+
+                            </li>
+
+                            <li class="has-submenu" style="position: relative;">
+                                <a href="#" class="city-menu-trigger"><i class="dripicons-broadcast"></i> 城市</a>
+                                <div class="city-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e6f0; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); z-index: 1000; min-width: 200px; max-height: 400px; overflow-y: auto; padding: 10px;">
+                                    {% if cites %}
+                                    <div style="font-weight: 500; color: #333; padding: 8px 12px; border-bottom: 1px solid #e3e6f0; margin-bottom: 5px;">选择城市</div>
+                                    {% for city in cites %}
+                                    <a href="/cityChar?city={{ city }}" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        {{ city }}
+                                    </a>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div style="padding: 10px 12px; color: #999;">暂无城市数据</div>
+                                    {% endif %}
+                                </div>
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/detailInfo"><i class="dripicons-view-thumb"></i> 详情信息</a>
+
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="/dataVisualization"><i class="dripicons-graph-bar"></i>数据可视化 </a>
+
+                            </li>
+
+                            <li class="has-submenu">
+                                <a href="#"><i class="dripicons-to-do"></i> 数据词云图</a>
+
+                            </li>
+
+                        </ul>
+                        <!-- End navigation menu -->
+                    </div>
+                    <!-- end #navigation -->
+                </div>
+                <!-- end container -->
+            </div>
+            <!-- end navbar-custom -->
+        </header>
+        <!-- End Navigation Bar-->
+
+    </div>
+    <!-- header-bg -->
+
+    <div style="padding: 20px; background-color: #f8f9fa; padding-bottom: 80px;">
+        <!-- 城市标题 -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #333; font-weight: 600;">{{ defaultCity }} 天气数据分析</h2>
+        </div>
+
+        <!-- 大型气温变化折线图 -->
+        <div class="chart-container main-chart" style="margin-bottom: 20px;">
+            <div class="chart-title">{{ defaultCity }} - 气温变化趋势</div>
+            <div id="mainChart" style="width: 100%; height: calc(100% - 40px);"></div>
+        </div>
+
+        <!-- 三个小型饼图 -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <!-- 天气类型分布饼图 -->
+            <div class="chart-container pie-chart">
+                <div class="chart-title">{{ defaultCity }} - 天气类型分布</div>
+                <div id="weatherPieChart" style="width: 100%; height: calc(100% - 40px);"></div>
+            </div>
+
+            <!-- 风向分布饼图 -->
+            <div class="chart-container pie-chart">
+                <div class="chart-title">{{ defaultCity }} - 风向分布</div>
+                <div id="windPieChart" style="width: 100%; height: calc(100% - 40px);"></div>
+            </div>
+
+            <!-- 风力等级分布饼图 -->
+            <div class="chart-container pie-chart">
+                <div class="chart-title">{{ defaultCity }} - 风力等级分布</div>
+                <div id="windOrderPieChart" style="width: 100%; height: calc(100% - 40px);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" style="position: fixed; bottom: 0; left: 0; right: 0; background: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #e3e6f0;">
+        Copyright &copy; 2022.Company name All rights reserved.
+    </footer>
+
+    <!-- jQuery  -->
+    <script src="../static/js/jquery.min.js"></script>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/waves.min.js"></script>
+
+    <!-- ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // 城市菜单悬停交互 - 在li元素上绑定，确保移动到下拉框时不会消失
+            $('.has-submenu:has(.city-menu-trigger)').hover(
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+
+            // 初始化气温变化折线图
+            var mainChart = echarts.init(document.getElementById('mainChart'));
+            var dateData = {{ date|safe }};
+            var maxTempData = {{ maxTemp|safe }};
+            var minTempData = {{ minTemp|safe }};
+
+            var mainOption = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    borderColor: '#4a73e8',
+                    borderWidth: 1,
+                    textStyle: {
+                        color: '#333',
+                        fontSize: 14
+                    }
+                },
+                legend: {
+                    data: ['最高气温', '最低气温'],
+                    top: 10
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dateData,
+                    axisLabel: {
+                        rotate: 45,
+                        color: '#666'
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '温度 (°C)',
+                    axisLabel: {
+                        formatter: '{value}°C'
+                    }
+                },
+                dataZoom: [
+                    {
+                        type: 'slider',
+                        show: true,
+                        start: 0,
+                        end: 100,
+                        bottom: 5
+                    }
+                ],
+                series: [
+                    {
+                        name: '最高气温',
+                        type: 'line',
+                        data: maxTempData,
+                        smooth: true,
+                        itemStyle: {
+                            color: '#e74c3c'
+                        },
+                        lineStyle: {
+                            width: 2
+                        },
+                        markLine: {
+                            data: [{ type: 'average', name: '平均值' }]
+                        },
+                        markPoint: {
+                            data: [
+                                { type: 'max', name: '最大值' },
+                                { type: 'min', name: '最小值' }
+                            ]
+                        }
+                    },
+                    {
+                        name: '最低气温',
+                        type: 'line',
+                        data: minTempData,
+                        smooth: true,
+                        itemStyle: {
+                            color: '#3498db'
+                        },
+                        lineStyle: {
+                            width: 2
+                        },
+                        markLine: {
+                            data: [{ type: 'average', name: '平均值' }]
+                        },
+                        markPoint: {
+                            data: [
+                                { type: 'max', name: '最大值' },
+                                { type: 'min', name: '最小值' }
+                            ]
+                        }
+                    }
+                ]
+            };
+            mainChart.setOption(mainOption);
+
+            // 初始化天气类型分布饼图
+            var weatherPieChart = echarts.init(document.getElementById('weatherPieChart'));
+            var weatherData = {{ resultWeather|safe }};
+
+            var weatherPieOption = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: 10,
+                    type: 'scroll',
+                    padding: [0, 20],
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                series: [
+                    {
+                        name: '天气类型',
+                        type: 'pie',
+                        radius: '65%',
+                        center: ['50%', '42%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 5,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}: {d}%'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: weatherData.slice(0, 15)
+                    }
+                ]
+            };
+            weatherPieChart.setOption(weatherPieOption);
+
+            // 初始化风向分布饼图
+            var windPieChart = echarts.init(document.getElementById('windPieChart'));
+            var windData = {{ resultWind|safe }};
+
+            var windPieOption = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: 10,
+                    type: 'scroll',
+                    padding: [0, 20],
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                series: [
+                    {
+                        name: '风向',
+                        type: 'pie',
+                        radius: '65%',
+                        center: ['50%', '42%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 5,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}: {d}%'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: windData
+                    }
+                ]
+            };
+            windPieChart.setOption(windPieOption);
+
+            // 初始化风力等级分布饼图
+            var windOrderPieChart = echarts.init(document.getElementById('windOrderPieChart'));
+            var windOrderData = {{ resultWindOrder|safe }};
+
+            var windOrderPieOption = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: 10,
+                    type: 'scroll',
+                    padding: [0, 20],
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                series: [
+                    {
+                        name: '风力等级',
+                        type: 'pie',
+                        radius: '65%',
+                        center: ['50%', '42%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 5,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}: {d}%'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: windOrderData
+                    }
+                ]
+            };
+            windOrderPieChart.setOption(windOrderPieOption);
+
+            // 响应式调整
+            window.addEventListener('resize', function() {
+                mainChart.resize();
+                weatherPieChart.resize();
+                windPieChart.resize();
+                windOrderPieChart.resize();
+            });
+        });
+    </script>
 </body>
 </html>

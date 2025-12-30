@@ -21,5 +21,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/map-data/', views.map_data_api, name='map_data_api'),
     path('',views.index, name='index'),
+    path('cityChar', views.cityChar, name='cityChar'),
+    path('detailInfo', views.detailInfo, name='detailInfo'),
+    path('dataVisualization', views.dataVisualization, name='dataVisualization'),
+    path('wordCloud', views.wordCloud, name='wordCloud'),
+    path('weatherForecast', views.weatherForecast, name='weatherForecast'),
     path('myApp',include('myApp.urls')),
 ]

@@ -6,6 +6,9 @@ from myApp.models import WeatherInfo, User, Part2, Part1, Part3, Part4, Part5
 def getMapData(date):
    dataList = []
 
+   # 先获取指定日期的数据，只需要的字段
+   weatherListByDate = WeatherInfo.objects.filter(date=date).values('city', 'mastHeightDay')
+
    # 构建城市到省份的映射（支持带"市"和不带"市"的城市名称）
    cityToProvince = {}
    cityList = [
@@ -113,28 +116,19 @@ def getMapData(date):
                 cityWithoutSuffix = city[:-1]
                 cityToProvince[cityWithoutSuffix] = province
 
-   # 先筛选指定日期的数据
-   weatherListByDate = WeatherInfo.objects.filter(date=date)
-   
    # 遍历筛选后的天气数据
    for weather in weatherListByDate:
-       province = cityToProvince.get(weather.city)
+       city = weather['city']
+       province = cityToProvince.get(city)
        if province:
-           # 检查是否已经添加过该省份的数据
-           provinceExists = False
-           for item in dataList:
-               if item['name'] == province:
-                   provinceExists = True
-                   break
-           # 如果该省份还没有数据，则添加
-           if not provinceExists:
+           # 使用集合快速检查是否已存在
+           if province not in {item['name'] for item in dataList}:
                try:
                    dataList.append({
                        'name': province,
-                       'value': int(weather.mastHeightDay)
+                       'value': int(weather['mastHeightDay'])
                    })
                except (ValueError, TypeError):
-                   # 如果无法转换为整数，跳过该条记录
                    continue
 
    return dataList
@@ -143,22 +137,26 @@ def get_timestamp(date):
     return datetime.datetime.strptime(date, '%Y-%m-%d').timestamp()
 
 def getDateList():
-    weatherList = WeatherInfo.objects.all()
-    dateList = []
-    for i in weatherList:
-        dateList.append(i.date)
-    dateList = list(set(dateList))
+    # 只获取日期字段，避免加载所有数据
+    dateList = list(WeatherInfo.objects.values_list('date', flat=True).distinct())
     dateList = sorted(dateList, key=lambda x: get_timestamp(x))
     return dateList
 
+def getMonthList():
+    """获取所有月份列表（格式：2024-01）"""
+    # 只获取日期字段，避免加载所有数据
+    dateList = list(WeatherInfo.objects.values_list('date', flat=True).distinct())
+    monthList = []
+    for date in dateList:
+        if date and date.startswith(('2023', '2024', '2025')):
+            month = date[:7]  # 取年月部分，如 2024-01
+            monthList.append(month)
+    monthList = list(set(monthList))
+    monthList = sorted(monthList)
+    return monthList
+
 def getWindList():
-    weatherList = WeatherInfo.objects.all()
-    windList = []
-    for i in weatherList:
-        windList.append(i.wind)
-    windList = list(set(windList))
-    #windList = sorted(windList, key=lambda x: get_timestamp(x))
-    print(windList)
+    windList = list(WeatherInfo.objects.values_list('wind', flat=True).distinct())
     return windList
 
 def changrPassword(uname, passwordInfo):
@@ -173,35 +171,36 @@ def changrPassword(uname, passwordInfo):
     user.save()
 
 def getGlobalData():
-    weatherList = WeatherInfo.objects.all()
-    addressList = []
-    for i in weatherList:
-        addressList.append(i.city)
-    return list(set(addressList))
+    # 只获取城市字段，避免加载所有数据
+    return list(WeatherInfo.objects.values_list('city', flat=True).distinct())
 
 def getCityMaxMinTemp(city):
-    weatherListByCity = WeatherInfo.objects.filter(city=city)
+    weatherListByCity = WeatherInfo.objects.filter(city=city).values('date', 'mastHeightDay', 'mastSmallDay').order_by('date')
     maxTemp = []
     minTemp = []
     date = []
     for i in weatherListByCity:
-        date.append(i.date)
-        maxTemp.append(int(i.mastHeightDay))
-        minTemp.append(int(i.mastSmallDay))
-    print(date[:10],minTemp[:10],maxTemp[:10])
-    return date,maxTemp,minTemp
+        date.append(i['date'])
+        try:
+            maxTemp.append(int(i['mastHeightDay']))
+        except (ValueError, TypeError):
+            maxTemp.append(0)
+        try:
+            minTemp.append(int(i['mastSmallDay']))
+        except (ValueError, TypeError):
+            minTemp.append(0)
+    return date, maxTemp, minTemp
 
 def getWeatherListByCity(city):
-    weatherListByCity = WeatherInfo.objects.filter(city=city)
+    weatherListByCity = WeatherInfo.objects.filter(city=city, wearther__isnull=False).exclude(wearther='')
     weatherInfo = {}
     for i in weatherListByCity:
-        if weatherInfo.get(i.wearther,-1) ==-1:
+        if weatherInfo.get(i.wearther, -1) == -1:
             weatherInfo[i.wearther] = 1
         else:
             weatherInfo[i.wearther] += 1
-    print(weatherInfo)
     resultWeather = []
-    for k,v in weatherInfo.items():
+    for k, v in weatherInfo.items():
         resultWeather.append({
             'name': k,
             'value': v
@@ -209,15 +208,15 @@ def getWeatherListByCity(city):
     return resultWeather
 
 def getWindListByCity(city):
-    weatherListByCity = WeatherInfo.objects.filter(city=city)
+    weatherListByCity = WeatherInfo.objects.filter(city=city, wind__isnull=False).exclude(wind='')
     weatherInfo = {}
     for i in weatherListByCity:
-        if weatherInfo.get(i.wind,-1) ==-1:
+        if weatherInfo.get(i.wind, -1) == -1:
             weatherInfo[i.wind] = 1
         else:
             weatherInfo[i.wind] += 1
     resultWind = []
-    for k,v in weatherInfo.items():
+    for k, v in weatherInfo.items():
         resultWind.append({
             'name': k,
             'value': v
@@ -225,20 +224,20 @@ def getWindListByCity(city):
     return resultWind
 
 def getWindOrderListByCity(city):
-    weatherListByCity = WeatherInfo.objects.filter(city=city)
+    weatherListByCity = WeatherInfo.objects.filter(city=city, windOrder__isnull=False).exclude(windOrder='')
     weatherInfo = {}
     for i in weatherListByCity:
-        if weatherInfo.get(i.windOrder + '级',-1) ==-1:
-            weatherInfo[i.windOrder + '级'] = 1
+        windOrderKey = i.windOrder + '级'
+        if weatherInfo.get(windOrderKey, -1) == -1:
+            weatherInfo[windOrderKey] = 1
         else:
-            weatherInfo[i.windOrder + '级'] += 1
+            weatherInfo[windOrderKey] += 1
     resultWindOrder = []
-    for k,v in weatherInfo.items():
+    for k, v in weatherInfo.items():
         resultWindOrder.append({
             'name': k,
             'value': v
         })
-    print(resultWindOrder)
     return resultWindOrder
 
 def getTableData(city):
@@ -254,70 +253,63 @@ def getMonthData():
     return list(dateList.keys())
 
 def getAverageTemp(date):
-    year,month = map(int,date.split('-'))
-    weatherListByCity = Part2.objects.filter(date_year=year,date_month=month)
+    year, month = map(int, date.split('-'))
+    weatherListByCity = Part2.objects.filter(date_year=year, date_month=month)
 
-    xData = {}
+    xData = []
     y1Data = []
     y2Data = []
 
     for i in weatherListByCity:
-        if xData.get(i.city,-1) ==-1:
-            xData[i.city] = 1
-            y1Data.append(float(i.averageHeight))
-            y2Data.append(float(i.averageSmall))
-    print(xData,y1Data,y2Data)
-    return list(xData.keys()),y1Data,y2Data
+        xData.append(i.city)
+        y1Data.append(float(i.averageHeight) if i.averageHeight else 0)
+        y2Data.append(float(i.averageSmall) if i.averageSmall else 0)
+    return xData, y1Data, y2Data
 
 def getTopMinMaxTemp(date):
-    year,month = map(int,date.split('-'))
+    year, month = map(int, date.split('-'))
     weatherListByCity = Part1.objects.filter(date_year=year, date_month=month)
 
-    xData = {}
+    xData = []
     y1Data = []
     y2Data = []
     for i in weatherListByCity:
-        if xData.get(i.city,-1) ==-1:
-            xData[i.city] = 1
-            y1Data.append(float(i.mastHeight))
-            y2Data.append(float(i.mastSmall))
-    print(list(xData.keys()),y1Data,y2Data)
-    return list(xData.keys()),y1Data,y2Data
+        xData.append(i.city)
+        y1Data.append(float(i.mastHeight) if i.mastHeight else 0)
+        y2Data.append(float(i.mastSmall) if i.mastSmall else 0)
+    return xData, y1Data, y2Data
 
 def getAverageAir(date):
-    year,month = map(int,date.split('-'))
+    year, month = map(int, date.split('-'))
     weatherListByCity = Part3.objects.filter(date_year=year, date_month=month)
-    xData = {}
+    xData = []
     y1Data = []
     y2Data = []
     for i in weatherListByCity:
-        if xData.get(i.city,-1) ==-1:
-            xData[i.city] = 1
-            y1Data.append(float(i.mastAir) if i.mastAir is not None else None)
-            y2Data.append(float(i.lostAir) if i.lostAir is not None else None)
-    print(list(xData.keys()),y1Data,y2Data)
-    return list(xData.keys()),y1Data,y2Data
+        xData.append(i.city)
+        y1Data.append(float(i.mastAir) if i.mastAir else 0)
+        y2Data.append(float(i.lostAir) if i.lostAir else 0)
+    return xData, y1Data, y2Data
 
 def getAirque(date):
-    year,month = map(int,date.split('-'))
+    year, month = map(int, date.split('-'))
     weatherListByCity = Part4.objects.filter(date_year=year, date_month=month)
-    xData = {}
+    xData = []
+    yData = []
     for i in weatherListByCity:
-        if xData.get(i.city,-1) ==-1:
-            xData[i.city] = float(i.averageAir) if i.averageAir is not None else None
-    print(list(xData.keys()),list(xData.values()))
-    return list(xData.keys()),list(xData.values())
+        xData.append(i.city)
+        yData.append(float(i.averageAir) if i.averageAir else 0)
+    return xData, yData
 
 def getWindOrder(city):
-    weatherListByCity = Part5.objects.filter(city=city)
+    weatherListByCity = Part5.objects.filter(city=city).order_by('date')
     xData = []
     yData = []
     for i in weatherListByCity:
         formatted_date = i.date.strftime('%Y-%m-%d') if i.date else None
         xData.append(formatted_date)
-        yData.append(int(i.windOrder) if i.windOrder is not None else None)
-    print(xData,yData)
-    return xData,yData
+        yData.append(int(i.windOrder) if i.windOrder else 0)
+    return xData, yData
 
 
 

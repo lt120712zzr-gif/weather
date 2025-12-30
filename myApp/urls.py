@@ -8,4 +8,6 @@ urlpatterns = [
     path('cityChar', views.cityChar, name='cityChar'),
     path('tableData', views.tableData, name='tableData'),
     path('api/map-data/', views.map_data_api, name='map_data_api'),
+    path('wordCloud', views.wordCloud, name='wordCloud'),
+    path('weatherForecast', views.weatherForecast, name='weatherForecast'),
 ]

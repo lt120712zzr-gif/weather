@@ -215,26 +215,49 @@
                                 
                             </li>
 
-                            <li class="has-submenu">
-                                <a href="#"><i class="dripicons-broadcast"></i> 城市</a>
-                                
+                            <li class="has-submenu" style="position: relative;">
+                                <a href="#" class="city-menu-trigger"><i class="dripicons-broadcast"></i> 城市</a>
+                                <div class="city-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e6f0; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); z-index: 1000; min-width: 200px; max-height: 400px; overflow-y: auto; padding: 10px;">
+                                    {% if cites %}
+                                    <div style="font-weight: 500; color: #333; padding: 8px 12px; border-bottom: 1px solid #e3e6f0; margin-bottom: 5px;">选择城市</div>
+                                    {% for city in cites %}
+                                    <a href="/cityChar?city={{ city }}" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        {{ city }}
+                                    </a>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div style="padding: 10px 12px; color: #999;">暂无城市数据</div>
+                                    {% endif %}
+                                </div>
                             </li>
 
                             <li class="has-submenu">
                                 <a href="#"><i class="dripicons-view-thumb"></i> 详情信息</a>
-                                
+
+                            </li>
+
+                            <li class="has-submenu" style="position: relative;">
+                                <a href="#" class="viz-menu-trigger"><i class="dripicons-graph-bar"></i>数据可视化 </a>
+                                <div class="viz-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e6f0; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); z-index: 1000; min-width: 200px; padding: 10px;">
+                                    <div style="font-weight: 500; color: #333; padding: 8px 12px; border-bottom: 1px solid #e3e6f0; margin-bottom: 5px;">选择统计类型</div>
+                                    <a href="/dataVisualization?type=temp" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        <i class="dripicons-thermometer"></i> 月份气温统计
+                                    </a>
+                                    <a href="/dataVisualization?type=air" style="display: block; padding: 10px 12px; color: #333; text-decoration: none; transition: all 0.2s ease; border-radius: 4px;">
+                                        <i class="dripicons-wind"></i> 月份空气统计
+                                    </a>
+                                </div>
                             </li>
 
                             <li class="has-submenu">
-                                <a href="#"><i class="dripicons-graph-bar"></i>数据可视化 </a>
-                                
+                                <a href="/wordCloud"><i class="dripicons-to-do"></i> 数据词云图</a>
+
                             </li>
 
                             <li class="has-submenu">
-                                <a href="#"><i class="dripicons-to-do"></i> 数据词云图</a>
-                                
-                            </li>
+                                <a href="/weatherForecast"><i class="dripicons-weather"></i> 天气预测</a>
 
+                            </li>
                         </ul>
                         <!-- End navigation menu -->
                     </div>
@@ -303,6 +326,26 @@
     <!-- 中国地图和日期选择器JavaScript -->
     <script>
         $(document).ready(function() {
+            // 城市菜单悬停交互 - 在li元素上绑定，确保移动到下拉框时不会消失
+            $('.has-submenu:has(.city-menu-trigger)').hover(
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.city-dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+
+            // 数据可视化菜单悬停交互
+            $('.has-submenu:has(.viz-menu-trigger)').hover(
+                function() {
+                    $(this).find('.viz-dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.viz-dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+
             var mapData = {{ dataList|safe }};
             var currentData = mapData;
             var chart = null;
