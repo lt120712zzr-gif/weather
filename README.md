@@ -75,7 +75,7 @@ cd Wheater_DjangoProject
 
 ### 2. 配置数据库
 
-#### 方式一：导入 SQL 文件（推荐）
+#### 导入 SQL 文件
 
 1. 下载并解压数据库文件：
    - 网盘链接：https://pan.baidu.com/s/1z10wQ1736YTliWGd-u8MJw
@@ -91,33 +91,6 @@ cd Wheater_DjangoProject
    mysql -u root -p weatherdb < weatherdata2.sql
    ```
 
-#### 方式二：运行爬虫获取数据
-
-1. 修改数据库配置，编辑 `Wheater_DjangoProject/settings.py`：
-   ```python
-   DATABASES = {
-       'default': {
-           'ENGINE': 'django.db.backends.mysql',
-           'NAME': 'weatherdb',
-           'USER': 'root',
-           'PASSWORD': '你的密码',
-           'HOST': 'localhost',
-           'PORT': '3306',
-       }
-   }
-   ```
-
-2. 运行数据库迁移：
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-3. 运行爬虫：
-   ```bash
-   python spider/spiderCity.py    # 爬取城市列表
-   python spider/spiderMain.py    # 爬取天气数据
-   ```
 
 ### 3. 启动项目
 
