@@ -4,8 +4,24 @@ from utils import *
 from utils.getChartData import *
 from django.http import JsonResponse
 from django.db.models import Q, Count
+from django.contrib import messages
+import hashlib
+from functools import wraps
 # Create your views here.
 
+
+def login_required(view_func):
+    """登录验证装饰器"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        username = request.session.get('username')
+        if not username:
+            return redirect('/login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+@login_required
 def index(request):
     uname = request.session.get('username')
     userInfo = None
@@ -29,6 +45,7 @@ def index(request):
         'cites': cites,
     })
 
+@login_required
 def cityChar(request):
     cites = getGlobalData()
     city = request.GET.get('city') or (cites[0] if cites else '')
@@ -57,6 +74,7 @@ def cityChar(request):
         'resultWindOrder': resultWindOrder,
     })
 
+@login_required
 def tableData(request):
     uname = request.session.get('username')
     if not uname:
@@ -94,6 +112,7 @@ def map_data_api(request):
         'data': dataList
     }, safe=False)
 
+@login_required
 def dataVisualization(request):
     """数据可视化页面 - 支持温度和空气质量统计"""
     cites = getGlobalData()
@@ -232,6 +251,7 @@ def dataVisualization(request):
         'avgAirQualities': avgAirQualities,
     })
 
+@login_required
 def detailInfo(request):
     """详情信息页面 - 支持分页、排序、搜索"""
     cites = getGlobalData()
@@ -326,6 +346,7 @@ def detailInfo(request):
         'monthList': getMonthList(),
     })
 
+@login_required
 def wordCloud(request):
     """天气词云图页面"""
     cites = getGlobalData()
@@ -361,6 +382,7 @@ def wordCloud(request):
     })
 
 
+@login_required
 def weatherForecast(request):
     """天气预测页面"""
     cites = getGlobalData()
@@ -492,4 +514,108 @@ def weatherForecast(request):
         'defaultCity': defaultCity,
         'forecastData': forecastData,
     })
+
+
+def login_view(request):
+    """登录页面"""
+    # 清除所有旧消息
+    storage = messages.get_messages(request)
+    storage.used = True
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # 简单的密码加密（实际项目应使用更安全的方式）
+        hashed_password = hashlib.md5(password.encode()).hexdigest()
+
+        try:
+            user = User.objects.get(username=username)
+            if user.password == hashed_password:
+                # 登录成功，保存session
+                request.session['username'] = username
+                messages.success(request, '登录成功！')
+                return redirect('index')
+            else:
+                messages.error(request, '用户名或密码错误！')
+        except User.DoesNotExist:
+            messages.error(request, '用户不存在！')
+
+    return render(request, 'pages-login.html')
+
+
+def register_view(request):
+    """注册页面"""
+    # 清除所有旧消息
+    storage = messages.get_messages(request)
+    storage.used = True
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # 检查用户名是否已存在
+        if User.objects.filter(username=username).exists():
+            messages.error(request, '用户名已存在！')
+            return render(request, 'pages-register.html')
+
+        # 简单的密码加密
+        hashed_password = hashlib.md5(password.encode()).hexdigest()
+
+        # 创建用户
+        User.objects.create(
+            username=username,
+            password=hashed_password
+        )
+
+        messages.success(request, '注册成功！请登录')
+        return redirect('login')
+
+    return render(request, 'pages-register.html')
+
+
+def logout_view(request):
+    """登出"""
+    if 'username' in request.session:
+        del request.session['username']
+    return redirect('login')
+
+
+@login_required
+def profile_view(request):
+    """个人信息页面"""
+    uname = request.session.get('username')
+    try:
+        userInfo = User.objects.get(username=uname)
+    except User.DoesNotExist:
+        return redirect('login')
+
+    if request.method == 'POST':
+        newPassword = request.POST.get('newPassword')
+        confirmPassword = request.POST.get('confirmPassword')
+
+        # 验证新密码
+        if not newPassword or len(newPassword) < 6:
+            messages.error(request, '密码长度至少为6个字符！')
+            return redirect('profile')
+
+        if newPassword != confirmPassword:
+            messages.error(request, '两次输入的密码不一致！')
+            return redirect('profile')
+
+        # 更新密码
+        hashed_new_password = hashlib.md5(newPassword.encode()).hexdigest()
+        userInfo.password = hashed_new_password
+        userInfo.save()
+
+        messages.success(request, '密码修改成功！')
+        return redirect('profile')
+
+    cites = getGlobalData()
+    return render(request, 'profile.html', {
+        'userInfo': userInfo,
+        'cites': cites
+    })
+
+
 
